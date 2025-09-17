@@ -1,0 +1,29 @@
+#Core Framework
+langchain
+langgraph
+fastmcp
+httpx
+
+#LLM Provider
+openai
+langchain-openai
+
+#MCP Server
+mcp
+langchain-mcp-adapters
+
+#Tools/APIs
+googlemaps
+
+#Web/API server
+fastapi
+uvicorn[standard]
+
+#Utilities
+python-dotenv   
+requests       
+pydantic      
+
+#Testing
+pytest
+pytest-asyncio
