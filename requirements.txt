@@ -1,7 +1,6 @@
 #Core Framework
 langchain
 langgraph
-fastmcp
 httpx
 
 #LLM Provider
@@ -9,7 +8,6 @@ openai
 langchain-openai
 
 #MCP Server
-mcp
 langchain-mcp-adapters
 
 #Tools/APIs
