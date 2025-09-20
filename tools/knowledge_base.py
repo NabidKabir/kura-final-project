@@ -371,4 +371,10 @@ Visit the New York State Department of Environmental Conservation for more infor
     }
 }
     
-    
+#This is the function that will search the knowledge base
+
+def search_knowledge_base(city: str, topic: str) -> str: 
+    """ This searches the manual knowledge base for the specific city and the topic, this requires precision and cannot be general """
+    city_knowledge = KNOWLEDGE_BASE.get(city.lower(), {})
+    #What should it return if it does not find anything?
+    return city_knowledge.get(topic.lower(), "I'm sorry, I do not have information on that topic.")
