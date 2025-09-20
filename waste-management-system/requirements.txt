@@ -1,0 +1,35 @@
+# Core dependencies for the waste management system
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings
+python-dotenv==1.0.0
+
+# LangChain for multi-agent system (flexible versions to resolve conflicts)
+langchain
+langchain-openai
+langgraph
+
+# OpenAI API
+openai>=1.10.0
+
+# Database and caching
+sqlalchemy==2.0.23
+alembic==1.12.1
+redis==5.0.1
+
+# Location and mapping services  
+googlemaps==4.10.0
+geopy==2.4.0
+requests==2.31.0
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+isort==5.12.0
+
+# Additional utilities
+python-multipart==0.0.6
+jinja2==3.1.2
+aiofiles==23.2.1
