@@ -1,74 +1,113 @@
-
-#Libraries import goes here; Pydantic is for data structures, googlemaps connects to the API, connects to my knowledge base via tools.knowledge_base
-import os 
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastmcp import FastMCP, Resource
+import os
+import requests
 from dotenv import load_dotenv
-import googlemaps
-from tools.knowledge_base import search_knowledge_base
+from typing import List, Dict, Optional, Any
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
-#looks for .env file
 load_dotenv()
-#gmaps = Google Maps as the variable name
-gmaps = googlemaps.Client(key=os.getenv("GOOGLE_MAPS_API_KEY"))
-app = FastAPI(title="MCP Tool Server")
 
-#requesting info from the APIs
+recycle_mcp = FastMCP("Recycling_Server")
 
-#Pydantic models; these are the data structures that define the input and output of the endpoints
-class RegulationRequest(BaseModel):
-    city: str
-    topic: str  
-    
-class PlacesRequest(BaseModel):
-   location: str
-   radius: int = 5000 #meters were suggested
-   keyword: str = "recycling center"
-   
-#Endpoints ; app.post is the decorator; accepts POST requests   
-@app.post("/tools/lookup_regulations") #this is a URL endpoint; used to help answer questions. @ is the decorator. This right here is what helps the endpoint provide access to our static knowledge base
-def lookup_regulations_endpoint(request: RegulationRequest):
-    # Before I was writing city:, topic:, result:; but I think maybe passing it into the function directly might be a better strategy.
-    #this validates incoming JSON data against the RegulationRequest model. 
-    print(f"MCP Server has received a request for regulation about '{request.topic}' in '{request.city}'")
-    #execites search funciton using the city and topic 
-    result = search_knowledge_base(city=request.city, topic= request.topic)
-    return {"result": result}
+@recycle_mcp.resource()
+def regulation_knowledge_base() -> Resource:
+    """Recycling and waste management regulation knowledge base"""
 
-@app.post("/tools/find_nearby_places")
-def find_nearby_places_endpoint(request: PlacesRequest):
-    #this is going to be where we we use the Google Places API
-    print(f"MCP Server has received a request to find the nearby recycling centers. Received request to find '{request.keyword}' within {request.radius} meters of '{request.location}'")
-    
-    #error handling here
-    try: 
-        #we need the coordinates for the location 
-        geocode_result = gmaps.geocode(request.location)
-        if not geocode_result:
-            return {"error": "The location could not be found."}
-        #lat for latutude, lng for longitude
-        lat = geocode_result[0]['geometry']['location']['lat']
-        lng = geocode_result[0]['geometry']['location']['lng']
-        
-        #find nearby places
-        places_result = gmaps.places_nearby(
-            location=(lat, lng), 
-            radius=request.radius, 
-            keyword=request.keyword
-        )
-        #This is *supposed* to format the request 
-        if not places_result.get('results'):
-            return {"result": f"No {request.keyword} found near this {request.location}."}
-        
-        formatted_results = []
-        for place in places_result['results'][:5]: #we want the top 5 results I guess
-            formatted_results.append(
-                f" Name: {place['name']}, Address: {place['vicinity']}"
-            )
-        return {"result": "\n".join(formatted_results)}
-    
+    with open("knowledge_base/knowledge_base.txt", "r", encoding="utf-8") as f:
+        text = f.read()
+
+    return Resource(
+        uri="kb://regulation-knowledge-base",
+        name="Waste Regulation Knowledge Base",
+        mimeType="text/plain",
+        description="Guidelines and facts about regulations regarding recycling and waste classification.",
+        contents=text,
+    )
+
+
+@recycle_mcp.tool(title="Geolocator")
+def geolocate_ip(ip: str = None) -> dict:
+    """Function that locates the users location by latitude and longitude by their IP address.
+
+        Args:
+            ip (optional): IP address to check. If none, uses caller's IP.
+
+        Returns:
+            Dictionary with latitude and longitude of IP address OR error message
+    """
+
+    url = f"http://ip-api.com/json/{ip or ''}"
+
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+
+        geo_data = response.json()
+
+        if geo_data.get("status") != "success":
+            raise ValueError(f"Geolocation Lookup Failed {geo_data}")
+        else:
+            return {"latitude": geo_data["lat"], "longitude": geo_data["lon"]}
     except Exception as e:
-        return {"result": f"An unexpected error has occurred within the Google Places API: {e}"}
-    
-    
-               
+        return {"error": str(e)}
+
+GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
+
+@recycle_mcp.tool(title="Places Locater")
+def get_places(query: str, latitude: float, longitude: float) -> dict:
+    """Function that leverages the Google Places API to find locations near the latitude and longitude given."
+
+        Args:
+            query: The type of location you are searching for (example: "Recycling Center")
+            latitude: The current location of the user in terms of a nort-south position point on Earth
+            longitude: The current location of the user in terms of a east-west position point on Earth
+
+        Returns:
+            Dictionary with 3 location details, results, and metadata
+    """ 
+    #Google API Url
+    url = 'https://places.googleapis.com/v1/places:searchText'
+
+    #headers for request
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': '*'
+    }
+
+    #request body
+
+    request_body = {
+        "textQuery": query,
+        "locationBias": {
+            "circle": {
+                "center": {
+                    "latitude": latitude,
+                    "longitude": longitude
+                },
+                "radius": 100.0
+            }
+        }
+    }
+
+    #get response
+    response = requests.post(url, headers=headers, json=request_body)
+    #get JSON object
+    output = response.json()
+    #save the locations in a dictionary
+    locations = []
+
+    for row in output['places']:
+        locations.append({
+            "name": row["displayName"]["text"],
+            "address": row["formattedAddress"],
+            "phone_number": row["nationalPhoneNumber"]
+        })
+
+    return {
+        "query": query,
+        "latitude_used": latitude,
+        "longitude_used": longitude,
+        "results": locations
+    }
+
