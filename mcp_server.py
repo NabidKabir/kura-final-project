@@ -10,20 +10,37 @@ load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
 
-@recycle_mcp.resource("kb://")
-def get_regulation_knowledge_base() -> TextResource:
-    """Recycling and waste management regulation knowledge base"""
 
-    with open("knowledge_base/knowledge_base.txt", "r", encoding="utf-8") as f:
+def split_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
+    chunks = []
+    start = 0
+    text_length = len(text)
+
+    while start < text_length:
+        end = min(start + chunk_size, text_length)
+        chunk = text[start:end]
+        chunks.append(chunk)
+        start += chunk_size - overlap  # move start forward with overlap
+
+    return chunks
+
+@recycle_mcp.tool(title="Get_Knowledge_Base")
+def get_regulation_knowledge_base_chunks(chunk_size: int = 250, overlap: int = 50) -> str:
+    """
+    Retrieves the recycling/waste management regulations knowledge base split into chunks
+    
+    Returns: 
+        List of text chunks
+    """
+
+    kb_path = "knowledge_base/knowledge_base.txt"
+    if not os.path.exists(kb_path):
+        return "Knowledge base file not found."
+
+    with open(kb_path, "r", encoding="utf-8") as f:
         text = f.read()
 
-    return TextResource(
-        uri="kb://regulation-knowledge-base",
-        name="Waste Regulation Knowledge Base",
-        mimeType="text/plain",
-        description="Guidelines and facts about regulations regarding recycling and waste classification.",
-        contents=text,
-    )
+    return split_text(text, chunk_size=chunk_size, overlap=overlap)
 
 
 @recycle_mcp.tool(title="Geolocator")
@@ -54,7 +71,7 @@ def geolocate_ip(ip: str = None) -> dict:
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
-@recycle_mcp.tool(title="Places Locater")
+@recycle_mcp.tool(title="Google Places Locater")
 def get_places(query: str, latitude: float, longitude: float) -> dict:
     """Function that leverages the Google Places API to find locations near the latitude and longitude given."
 
