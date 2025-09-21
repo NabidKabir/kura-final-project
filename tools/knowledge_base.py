@@ -1,3 +1,5 @@
+import json
+
 # The KNOWLEDGE_BASE is a dictionary that will store all of the static information for our database. It is the page information rather than the url. This allows the research agent to look for specific information. it is very important that the agent does not just look for info from the web, especially because these are laws and regulations that can result in fines. 
 
 KNOWLEDGE_BASE = {
@@ -378,3 +380,23 @@ def search_knowledge_base(city: str, topic: str) -> str:
     city_knowledge = KNOWLEDGE_BASE.get(city.lower(), {})
     #What should it return if it does not find anything?
     return city_knowledge.get(topic.lower(), "I'm sorry, I do not have information on that topic.")
+
+def load_knowledge_base_from_json(filepath: str):
+    """Loads the knowledge base from a JSON file."""
+   try: 
+       with open(filepath, 'r', encoding=utf-8') as f: 
+                 return json.load(f)
+   except FileNotFoundError:
+    print(f"Error: Knowledge base file not found at {filepath}.")
+    return {}
+   except json.JSONDecodeError:
+   print(f"Error: Failed to decode JSON from the knowledge base file at {filepath}.")
+   return {}
+   
+ #Load/get the knowleedge base from the file when the application starts
+    KNOWLEDGE_BASE = load_knowledge_base_from_json('knowledge_base.txt')
+    
+    def search_knowledge_base(city: str, topi: str) -> str:
+        """Searches the knowledge base for the specific city and topic."""
+        city_knowledge = KNOWLEDGE_BASE.get(city.lower(), {})
+        return city_knowledge.get(topic.lower(), "I'm sorry, I do not have information on that topic.")
