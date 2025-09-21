@@ -1,4 +1,5 @@
-from fastmcp import FastMCP, Resource
+from fastmcp import FastMCP
+from fastmcp.resources import TextResource
 import os
 import requests
 from dotenv import load_dotenv
@@ -9,14 +10,14 @@ load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
 
-@recycle_mcp.resource()
-def regulation_knowledge_base() -> Resource:
+@recycle_mcp.resource("kb://")
+def get_regulation_knowledge_base() -> TextResource:
     """Recycling and waste management regulation knowledge base"""
 
     with open("knowledge_base/knowledge_base.txt", "r", encoding="utf-8") as f:
         text = f.read()
 
-    return Resource(
+    return TextResource(
         uri="kb://regulation-knowledge-base",
         name="Waste Regulation Knowledge Base",
         mimeType="text/plain",
@@ -112,4 +113,4 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
     }
 
 if __name__ == "__main__":
-    recycle_mcp.start(host="localhost", port=8000)
+    recycle_mcp.run(transport="http", host="localhost", port=8000)
