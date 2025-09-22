@@ -2,14 +2,12 @@ from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from dotenv import load_dotenv
 
-# Tool for knowledge is imported here
-from tools.knowledge_base import search_knowledge_base
 
 load_dotenv()
 
 #assumes that the localhost is running on 8000 and sets up the MCP server
 mcp_client = MultiServerMCPClient(
-    servers=["http://127.0.0.1:8000"]
+    ["http://127.0.0.1:8000"]
 )
 
 #List the tools here and use @tool before each tool; the tool names are found in mcp_server branch for the functions used here
@@ -22,7 +20,7 @@ def get_knowledge_base_chunks() -> list[str]:
     # .invoke is used to get the tool on the remote server by using it's title
     return mcp_client.invoke("Get_Knowledge_Base") #this is the exposure name from mcp_server branch
 
-@tool #Question: should i have the ip be a float instead of a string?
+@tool
 def geolocate_ip(ip: str = None) -> dict: 
     """
     Finds the user's location by their IP address by calling the MCP server.
