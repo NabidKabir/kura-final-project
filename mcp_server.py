@@ -1,4 +1,8 @@
 from fastmcp import FastMCP
+        mcp-server
+
+from fastmcp.resources import TextResource
+        main
 import os
 import requests
 from dotenv import load_dotenv
@@ -9,7 +13,44 @@ load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
 
+        mcp-server
 @mcp.tool(title="Geolocator")
+
+
+def split_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
+    chunks = []
+    start = 0
+    text_length = len(text)
+
+    while start < text_length:
+        end = min(start + chunk_size, text_length)
+        chunk = text[start:end]
+        chunks.append(chunk)
+        start += chunk_size - overlap  # move start forward with overlap
+
+    return chunks
+
+@recycle_mcp.tool(title="Get_Knowledge_Base")
+def get_regulation_knowledge_base_chunks(chunk_size: int = 250, overlap: int = 50) -> str:
+    """
+    Retrieves the recycling/waste management regulations knowledge base split into chunks
+    
+    Returns: 
+        List of text chunks
+    """
+
+    kb_path = "knowledge_base/knowledge_base.txt"
+    if not os.path.exists(kb_path):
+        return "Knowledge base file not found."
+
+    with open(kb_path, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    return split_text(text, chunk_size=chunk_size, overlap=overlap)
+
+
+@recycle_mcp.tool(title="Geolocator")
+        main
 def geolocate_ip(ip: str = None) -> dict:
     """Function that locates the users location by latitude and longitude by their IP address.
 
@@ -37,7 +78,11 @@ def geolocate_ip(ip: str = None) -> dict:
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
+        mcp-server
 @mcp.tool(title="Places Locater")
+
+@recycle_mcp.tool(title="Google Places Locater")
+        main
 def get_places(query: str, latitude: float, longitude: float) -> dict:
     """Function that leverages the Google Places API to find locations near the latitude and longitude given."
 
@@ -82,7 +127,11 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
     locations = []
 
     for row in output['places']:
+        mcp-server
         loactions.append({
+
+        locations.append({
+        main
             "name": row["displayName"]["text"],
             "address": row["formattedAddress"],
             "phone_number": row["nationalPhoneNumber"]
@@ -95,3 +144,8 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
         "results": locations
     }
 
+        mcp-server
+
+if __name__ == "__main__":
+    recycle_mcp.run(transport="http", host="localhost", port=8000)
+        main
