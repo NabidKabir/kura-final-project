@@ -1,5 +1,8 @@
 from fastmcp import FastMCP
+        mcp-server
+
 from fastmcp.resources import TextResource
+        main
 import os
 import requests
 from dotenv import load_dotenv
@@ -9,6 +12,9 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
+
+        mcp-server
+@mcp.tool(title="Geolocator")
 
 
 def split_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
@@ -44,6 +50,7 @@ def get_regulation_knowledge_base_chunks(chunk_size: int = 250, overlap: int = 5
 
 
 @recycle_mcp.tool(title="Geolocator")
+        main
 def geolocate_ip(ip: str = None) -> dict:
     """Function that locates the users location by latitude and longitude by their IP address.
 
@@ -71,7 +78,11 @@ def geolocate_ip(ip: str = None) -> dict:
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
+        mcp-server
+@mcp.tool(title="Places Locater")
+
 @recycle_mcp.tool(title="Google Places Locater")
+        main
 def get_places(query: str, latitude: float, longitude: float) -> dict:
     """Function that leverages the Google Places API to find locations near the latitude and longitude given."
 
@@ -116,7 +127,11 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
     locations = []
 
     for row in output['places']:
+        mcp-server
+        loactions.append({
+
         locations.append({
+        main
             "name": row["displayName"]["text"],
             "address": row["formattedAddress"],
             "phone_number": row["nationalPhoneNumber"]
@@ -129,5 +144,8 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
         "results": locations
     }
 
+        mcp-server
+
 if __name__ == "__main__":
     recycle_mcp.run(transport="http", host="localhost", port=8000)
+        main

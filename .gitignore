@@ -1,5 +1,8 @@
 .env
 .env.*
+        mcp-server
+kuraVENV
+
 HEAD
 venv/.DS_Store
 .DS_Store
@@ -7,3 +10,4 @@ venv/.DS_Store
 venv/
 KuraVENV
 main
+         main
