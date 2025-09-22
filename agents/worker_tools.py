@@ -1,39 +1,46 @@
-from langchain_core.tools import tool       
+from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from dotenv import load_dotenv
 
+# Tool for knowledge is imported here
+from tools.knowledge_base import search_knowledge_base
+
 load_dotenv()
 
-#Conect to MCP server
-
+#assumes that the localhost is running on 8000 and sets up the MCP server
 mcp_client = MultiServerMCPClient(
-    servers=["http://127.0.0.1:8000"])
-   
-#client tools
+    servers=["http://127.0.0.1:8000"]
+)
+
+#List the tools here and use @tool before each tool; the tool names are found in mcp_server branch for the functions used here
 @tool
+def get_knowledge_base_chunks() -> list[str]:
+    """
+    This will call the entire regulations knowledge base from 
+    """
+    print("~~ Worker agent's tool is calling 'Get_Knowledge_Base' on/from the MCP server ~~")
+    # .invoke is used to get the tool on the remote server by using it's title
+    return mcp_client.invoke("Get_Knowledge_Base") #this is the exposure name from mcp_server branch
+
+@tool #Question: should i have the ip be a float instead of a string?
 def geolocate_ip(ip: str = None) -> dict: 
-    """Find user's location based on their IP address by calling on the MCP server."""
-    print("Worker Tool: Caling the geolocate_ip on the MCP server")
-    #will invoke the tool on the server
-    return mcp_client.invoke_tool("geolocate_ip", ip=ip)
+    """
+    Finds the user's location by their IP address by calling the MCP server.
+    """
+    print("~~ Worker Tool: Calling 'Geolocator' on MCP Server ~~")
+    # This invokes the tool on the remote server using its title/exposure name from mcp_server branch
+    return mcp_client.invoke("Geolocator", ip=ip)
 
 @tool
-def get_places (query: str, lat: float, lng: float) -> dict:
-    """Find nearby places such as recycling centers by calling on the MCP server."""
-    print(f"Worker Tool: Calling on get_places for '{query}' on MCP server")
-    #will invoke the tool on the server
+def get_places(query: str, latitude: float, longitude: float) -> dict:
+    """
+    Finds nearby places (like recycling centers) by calling the MCP server.
+    """
+    print(f"~~ Worker Tool: Calling 'Google Places Locater' for '{query}' on MCP Server ~~")
+    # This invokes the tool on the remote server using its title/exposure name from mcp_server branch
     return mcp_client.invoke(
-        "Locate Places Locator",
+        "Google Places Locater",
         query=query,
-        lat=lat,
-        lng=lng
+        latitude=latitude,
+        longitude=longitude
     )
-    
-    #knowledge base is local to the worker
-    from tools.knowledge_base import search_knowledge_base
-    @tool 
-    
-    def lookup_city_regulations(city: str, topic: str) -> str:
-        """Looks up specific regulations that can be found in the worker agents internal knowledge base.
-        print(f" Worker Tool: Looking up regulations about '{topic}' in '{city}'")"""
-        return search_knowledge_base(city=city, topic=topic)
