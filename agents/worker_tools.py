@@ -14,7 +14,7 @@ mcp_client = MultiServerMCPClient(
 @tool
 def get_knowledge_base_chunks() -> list[str]:
     """
-    This will call the entire regulations knowledge base from 
+    This will call the entire regulations knowledge base
     """
     print("~~ Worker agent's tool is calling 'Get_Knowledge_Base' on/from the MCP server ~~")
     # .invoke is used to get the tool on the remote server by using it's title
@@ -41,4 +41,18 @@ def get_places(query: str, latitude: float, longitude: float) -> dict:
         query=query,
         latitude=latitude,
         longitude=longitude
-    )
+        )
+    
+    #this tool is the web search fallback so that my agent can stop saying it knows nothing about what the user is talking about.
+@tool
+def google_search(query: str) -> str:
+    """
+    A secondary web search tool to find general information.
+    Use this if the 'get_knowledge_base_chunks' tool returns an empty list or an error. Having no answer for the user is unacceptable. That's what gets you fired. 
+  
+    """
+    print(f"--- RAG Fallback: Searching the web for '{query}' ---")
+    # This calls your web search tool
+    search_results = google_search.search(queries=[query])
+    # We'll return a formatted string of the top 3 results
+    return "\n".join([f"- {res.snippet}" for res in search_results[0].results[:3]])
