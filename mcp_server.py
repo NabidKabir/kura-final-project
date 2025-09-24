@@ -4,16 +4,18 @@ import requests
 from dotenv import load_dotenv
 from typing import List, Dict, Optional, Any
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
+import httpx
+import asyncio
 
 load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
 
-document = TextLoader("./data/knowledge_base.txt")
+document = TextLoader(file_path="./knowledge_base/knowledge_base.txt").load()
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=200,
     chunk_overlap=50
@@ -30,42 +32,42 @@ vector_store = Chroma(
 vector_store.add_documents(documents=chunks)
 
 @recycle_mcp.tool(title="Research")
-def regulation_retrieval(query: str):
+async def regulation_retrieval(query: str):
     "Function that retrieves relevant information from the knowledge base. "
-    results = vectorstore.similarity_search(query, k=3)
+    loop = asyncio.get_running_loop()
+    results = await loop.run_in_executor(
+        None, lambda: vector_store.similarity_search(query, k=3)
+    )
     return {"query": query, "results": [doc.page_content for doc in results]}
 
 
 @recycle_mcp.tool(title="Geolocator")
-def geolocate_ip(ip: str = None) -> dict:
+async def geolocate_ip() -> dict:
     """Function that locates the users location by latitude and longitude by their IP address.
-
-        Args:
-            ip (optional): IP address to check. If none, uses caller's IP.
-
         Returns:
             Dictionary with latitude and longitude of IP address OR error message
     """
 
-    url = f"http://ip-api.com/json/{ip or ''}"
+    url = f"http://ip-api.com/json/"
 
     try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-
-        geo_data = response.json()
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            geo_data = response.json()
 
         if geo_data.get("status") != "success":
             raise ValueError(f"Geolocation Lookup Failed {geo_data}")
-        else:
-            return {"latitude": geo_data["lat"], "longitude": geo_data["lon"]}
+        return {"latitude": geo_data["lat"], 
+                "longitude": geo_data["lon"]}
+
     except Exception as e:
         return {"error": str(e)}
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
 @recycle_mcp.tool(title="Google Places Locater")
-def get_places(query: str, latitude: float, longitude: float) -> dict:
+async def get_places(query: str, latitude: float, longitude: float) -> dict:
     """Function that leverages the Google Places API to find locations near the latitude and longitude given."
 
         Args:
