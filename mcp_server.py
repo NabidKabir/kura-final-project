@@ -8,10 +8,19 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
+from langchain_tavily import TavilySearch
 import httpx
 import asyncio
 
 load_dotenv()
+
+TAVILY_API_KEY = os.environ["TAVILY_API_KEY"]
+GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
+
+if not TAVILY_API_KEY or not GOOGLE_API_KEY:
+    raise ValueError(
+        "Missing required environment variables: TAVILY_API_KEY or GOOGLE_API KEY"
+    )
 
 recycle_mcp = FastMCP("Recycling_Server")
 
@@ -31,14 +40,39 @@ vector_store = Chroma(
 
 vector_store.add_documents(documents=chunks)
 
-@recycle_mcp.tool(title="Research")
-async def regulation_retrieval(query: str):
-    "Function that retrieves relevant information from the knowledge base. "
+@recycle_mcp.tool(title="Knowledge Base Retrieval")
+async def regulation_retrieval(query: str) -> dict:
+    """Function that retrieves relevant information from the knowledge base. 
+
+        Args:
+            query: string that contains the user query to run a similarity search against knowledge base
+
+        Returns:
+            dictionary with the query as well as any results in a list
+    """
     loop = asyncio.get_running_loop()
     results = await loop.run_in_executor(
         None, lambda: vector_store.similarity_search(query, k=3)
     )
     return {"query": query, "results": [doc.page_content for doc in results]}
+
+
+web_search = TavilySearch(api_key=TAVILY_API_KEY, max_results=3)
+
+@recycle_mcp.tool(title="Tavily Search Retreival")
+async def web_search(query: str) -> dict:
+    """Function that retrieves relevant information from the web ONLY if not found in knowledge base
+
+        Args:
+            query: string that contains the user query to run a web search
+
+        Returns
+            results: results of the web search in the form of a dict
+    """
+
+    search_result = await web_search.invoke(query)
+
+    return search_result
 
 
 @recycle_mcp.tool(title="Geolocator")
@@ -63,8 +97,6 @@ async def geolocate_ip() -> dict:
 
     except Exception as e:
         return {"error": str(e)}
-
-GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
 @recycle_mcp.tool(title="Google Places Locater")
 async def get_places(query: str, latitude: float, longitude: float) -> dict:

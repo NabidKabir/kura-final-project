@@ -8,9 +8,23 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import convert_to_messages
 from langgraph_supervisor import create_supervisor
 from langchain.chat_models import init_chat_model
+from slack_bolt.async_app import AsyncApp
+from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 
 load_dotenv()
+
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
+SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]
+
+supervisor = None
+
+if not OPENAI_API_KEY or not SLACK_BOT_TOKEN or not SLACK_APP_TOKEN:
+    raise ValueError(
+        "Missing required environment variables: OPENAI_API_KEY or SLACK_BOT_TOKEN or SLACK_APP_TOKEN"
+    )
+
+app = AsyncApp(token=SLACK_BOT_TOKEN)
 
 def pretty_print_message(message, indent=False):
     pretty_message = message.pretty_repr(html=True)
@@ -76,6 +90,8 @@ async def build_research_agent(recycle_mcp):
             prompt=(
                 "You are a research agent.\n\n"
                 "INSTRUCTIONS:\n"
+                "You are a research agent.\n\n"
+                "INSTRUCTIONS:\n"
                 "- Assist ONLY with research-related tasks, DO NOT do any math\n"
                 "- You will ONLY use the MCP function regulation_retrieval(query: str)"
                 "- Do NOT use any other tool."
@@ -87,8 +103,27 @@ async def build_research_agent(recycle_mcp):
             name="research_agent",
         )
         return research_agent
+    
+@app.event("app_mention")
+async def handle_query(body, say):
+    global supervisor
+    event = body["event"]
+    message = event["text"]
+    thread_ts = event.get("thread_ts", event["ts"])
+
+    if supervisor is None:
+        await say(text="Bot is still starting, please try again.", thread_ts=thread_ts)
+        return
+
+    response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]})
+    print("invoke")
+    
+    text = response["messages"][-1].content
+
+    await say(text=text, thread_ts=thread_ts)
 
 async def main():
+    global supervisor
     async with Client("http://localhost:8000/mcp") as recycle_mcp:
         locator_agent = await build_locator_agent(recycle_mcp)
         research_agent = await build_research_agent(recycle_mcp)
@@ -108,23 +143,9 @@ async def main():
             add_handoff_back_messages=True,
             output_mode="full_history"
         ).compile()
-
-        '''
-        Test for supervisor
-        '''
-        async for chunk in supervisor.astream(
-            {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": "Hello, somebody ran over a racoon and left it on the street, what should I do?",
-                    }
-                ]
-            },
-        ):
-            pretty_print_messages(chunk, last_message=True)
-
-        final_message_history = chunk["supervisor"]["messages"]        
+        handler = AsyncSocketModeHandler(app, SLACK_APP_TOKEN)
+        await handler.start_async()
+      
 
 if __name__ == "__main__":
     asyncio.run(main())
