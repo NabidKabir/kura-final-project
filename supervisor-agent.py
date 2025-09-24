@@ -115,7 +115,7 @@ async def handle_query(body, say):
         await say(text="Bot is still starting, please try again.", thread_ts=thread_ts)
         return
 
-    response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]})
+    response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]}, {"recursion_limit": 10})
     print("invoke")
     
     text = response["messages"][-1].content
@@ -132,11 +132,13 @@ async def main():
             model=init_chat_model("openai:gpt-4.1-mini"),
             agents=[research_agent, locator_agent],
             prompt=(
-                "You are a supervisor managing two agents:\n"
+                "You are a supervisor managing two agents regarding waste disposal. Users should only ask about how to dispose of waste material:\n"
+                "IF the user asks a question that is not related to waste disposal, kindly inform them that you cannot answer the question as you are a waste management agent."
                 "- a research agent. Assign research-related tasks to this agent, such as more information on city guidelines.\n"
                 "- a locater agent. Assign locating-related tasks to this agent, such as finding places near a specific area.\n"
                 "Assign work to one agent at a time, do not call agents in parallel.\n"
                 "You should use the research agent to inform yourself on the appropriate guidelines and then use the locater agent to give five locations for the user.\n"
+                "If you hit the recursion limit, inform the user that you cannot answer the question for now and to ask again later."
                 "You must also inform the user of any fines they could incur if they do not follow the guidelines.\n"
                 "Do not do any work yourself."
             ),
