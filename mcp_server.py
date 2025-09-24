@@ -1,46 +1,39 @@
 from fastmcp import FastMCP
-from fastmcp.resources import TextResource
 import os
 import requests
 from dotenv import load_dotenv
 from typing import List, Dict, Optional, Any
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
 
 load_dotenv()
 
 recycle_mcp = FastMCP("Recycling_Server")
 
+document = TextLoader("./data/knowledge_base.txt")
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=200,
+    chunk_overlap=50
+)
+chunks = text_splitter.split_documents(document)
 
-def split_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
-    chunks = []
-    start = 0
-    text_length = len(text)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
-    while start < text_length:
-        end = min(start + chunk_size, text_length)
-        chunk = text[start:end]
-        chunks.append(chunk)
-        start += chunk_size - overlap  # move start forward with overlap
+vector_store = Chroma(
+    collection_name="knowledge-base",
+    embedding_function=embeddings
+)
 
-    return chunks
+vector_store.add_documents(documents=chunks)
 
-@recycle_mcp.tool(title="Get_Knowledge_Base")
-def get_regulation_knowledge_base_chunks(chunk_size: int = 250, overlap: int = 50) -> str:
-    """
-    Retrieves the recycling/waste management regulations knowledge base split into chunks
-    
-    Returns: 
-        List of text chunks
-    """
-
-    kb_path = "knowledge_base/knowledge_base.txt"
-    if not os.path.exists(kb_path):
-        return "Knowledge base file not found."
-
-    with open(kb_path, "r", encoding="utf-8") as f:
-        text = f.read()
-
-    return split_text(text, chunk_size=chunk_size, overlap=overlap)
+@recycle_mcp.tool(title="Research")
+def regulation_retrieval(query: str):
+    "Function that retrieves relevant information from the knowledge base. "
+    results = vectorstore.similarity_search(query, k=3)
+    return {"query": query, "results": [doc.page_content for doc in results]}
 
 
 @recycle_mcp.tool(title="Geolocator")
