@@ -6,6 +6,9 @@ Challenge Statement and Architecture
 **Challenge Statement: 
   -Our focus is on the helping businesses properly recycle their waste and follow the regulations as defined by their state or local city. Many cities within the United States have different recycling laws, which makes it difficult for sources to offer a comprehensive list and information to businesses. The United States produces a massive amount of waste each year. Waste produced also contributes to environmental degradation and threatens the safety and health of many people both in the U.S. and abroad. 
 
+
+  Allocated budget: $5 for OpenAI key
+
  -------
 
  About our project:
