@@ -16,3 +16,12 @@ Challenge Statement and Architecture
     - MCP 
     - LangChain
     -
+
+Getting Started: 
+The Repository looks like this: 
+(File Structure Outline goes here)
+.env (.env.templete is used to prevent you from spillig your super, secret API keys and senstive information)
+README.md - this contains the instructions for how to run the program
+
+
+1. Make sure you have Python3.xx installed on your system. 
