@@ -2,8 +2,6 @@ from fastmcp import FastMCP
 import os
 import requests
 from dotenv import load_dotenv
-from typing import List, Dict, Optional, Any
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
