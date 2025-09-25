@@ -115,7 +115,7 @@ async def handle_query(body, say):
         await say(text="Bot is still starting, please try again.", thread_ts=thread_ts)
         return
 
-    response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]}, {"recursion_limit": 10})
+    response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]}, {"configurable":{"recursion_limit": 15}})
     print("invoke")
     
     text = response["messages"][-1].content
