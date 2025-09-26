@@ -1,0 +1,55 @@
+services:
+  # Chroma vector database for knowledge base storage
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - "8001:8000"
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  # MCP Server - provides tools for recycling information
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8000:8000"
+    environment:
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+      - ./mcp_server.py:/app/mcp_server.py
+    depends_on:
+      - chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Supervisor Agent with Slack integration
+  supervisor:
+    build:
+      context: .
+      dockerfile: Dockerfile.supervisor
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - MCP_SERVER_URL=http://mcp-server:8000
+    volumes:
+      - ./supervisor-agent.py:/app/supervisor-agent.py
+    depends_on:
+      - mcp-server
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
