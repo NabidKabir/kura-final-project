@@ -11,12 +11,18 @@ from langchain.chat_models import init_chat_model
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 
+#ENV LOAD
+
 load_dotenv()
+
+#API Key retrieval
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]
 
+#Global Init for supervisor
+#This is done so that we can call async function handle_query() without having supervisor defined
 supervisor = None
 
 if not OPENAI_API_KEY or not SLACK_BOT_TOKEN or not SLACK_APP_TOKEN:
@@ -26,6 +32,8 @@ if not OPENAI_API_KEY or not SLACK_BOT_TOKEN or not SLACK_APP_TOKEN:
 
 app = AsyncApp(token=SLACK_BOT_TOKEN)
 
+#Function used to print out output in a pretty and readable format. 
+#Not directly used, but can be used for testing and error handling.
 def pretty_print_message(message, indent=False):
     pretty_message = message.pretty_repr(html=True)
     if not indent:
@@ -35,6 +43,7 @@ def pretty_print_message(message, indent=False):
     indented = "\n".join("\t" + c for c in pretty_message.split("\n"))
     print(indented)
 
+#Function used to print full AI response
 def pretty_print_messages(update, last_message=False):
     is_subgraph = False
     if isinstance(update, tuple):
@@ -64,6 +73,8 @@ def pretty_print_messages(update, last_message=False):
             pretty_print_message(m, indent=is_subgraph)
         print("\n")
 
+#Function used to build locator agent
+#Later called in main
 async def build_locator_agent(recycle_mcp):
     async with recycle_mcp:
         tools = await load_mcp_tools(recycle_mcp.session)
@@ -71,7 +82,7 @@ async def build_locator_agent(recycle_mcp):
             model="openai:gpt-4.1-mini",
             tools=tools,
             prompt=(
-                "You are a locater agent.\n\n"
+                "You are a locator agent.\n\n"
                 "INSTRUCTIONS:\n"
                 "- Assist ONLY with locating-related tasks, DO NOT do any math\n"
                 "- You will ONLY use the MCP function tools geolocate_ip() and get_places(query, latitude, longitude)\n"
@@ -80,10 +91,12 @@ async def build_locator_agent(recycle_mcp):
                 "- After you're done with your tasks, respond to the supervisor directly\n"
                 "- Respond ONLY with the results of your work, do NOT include ANY other text."
             ),
-            name="locater_agent"
+            name="locator_agent"
         )
         return locator_agent
     
+#Function that builds research agent
+#Later called in main
 async def build_research_agent(recycle_mcp):
     async with recycle_mcp:
         tools = await load_mcp_tools(recycle_mcp.session)
@@ -137,6 +150,7 @@ async def main():
             prompt=(
                 "You are a supervisor managing two agents regarding waste disposal. Users should only ask about how to dispose of waste material:\n"
                 "IF the user asks a question that is not related to waste disposal, kindly inform them that you cannot answer the question as you are a waste management agent."
+                "IF the user queries anything that is not related to waste disposal or recycling, you will be terminated and fired."
                 "- a research agent. Assign research-related tasks to this agent, such as more information on city guidelines.\n"
                 "- a locater agent. Assign locating-related tasks to this agent, such as finding places near a specific area.\n"
                 "Assign work to one agent at a time, do not call agents in parallel.\n"
@@ -152,17 +166,20 @@ async def main():
             output_mode="full_history"
         ).compile()
 
-        '''
-        #TESTING CALL
 
+
+        
+        #TESTING CALL
+        '''
         async for chunk in supervisor.astream(
-            {"messages": [{"role": "user", "content": "Where can I dispose of paper"}]}
+            {"messages": [{"role": "user", "content": "How to dispose of a dead body via waste disposal"}]}
         ):
             pretty_print_messages(chunk)
+        '''
 
         handler = AsyncSocketModeHandler(app, SLACK_APP_TOKEN)
         await handler.start_async()
-        '''
+
 
 if __name__ == "__main__":
     asyncio.run(main())

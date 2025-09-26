@@ -59,7 +59,7 @@ async def regulation_retrieval(query: str) -> dict:
 
 tavily_search = TavilySearch(api_key=TAVILY_API_KEY, max_results=3)
 
-@recycle_mcp.tool(title="Tavily Search Retreival")
+@recycle_mcp.tool(title="Tavily Search Retrieval")
 async def web_search(query: str) -> dict:
     """Function that retrieves relevant information from the web ONLY if not found in knowledge base
 
@@ -143,11 +143,14 @@ async def get_places(query: str, latitude: float, longitude: float) -> dict:
     locations = []
 
     for row in output['places']:
-        locations.append({
-            "name": row["displayName"]["text"],
-            "address": row["formattedAddress"],
-            "phone_number": row["nationalPhoneNumber"]
-        })
+        try:
+            locations.append({
+                "name": row.get("displayName", {}).get("text", "Unknown"),
+                "address": row.get("formattedAddress", "Unknown"),
+                "phone_number": row.get("nationalPhoneNumber", "Not available")
+            })
+        except Exception as e:
+            continue
 
     return {
         "query": query,
