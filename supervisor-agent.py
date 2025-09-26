@@ -144,7 +144,8 @@ async def main():
                 "IF the object is a recyclable provide recycling centers nearby, this can include paper, plastic, aluminium and cardboard"
                 "You MUST find 5 locations to give to the user."
                 "If you hit the recursion limit, inform the user that you cannot answer the question for now and to ask again later."
-                "You must also inform the user of any fines they could incur if they do not follow the guidelines.\n"
+                "You must also inform the user of any fines they could incur if they do not follow the guidelines.\n" \
+                "DO NOT respond with a question."
                 "Do not do any work yourself."
             ),
             add_handoff_back_messages=True,
