@@ -15,7 +15,7 @@ Challenge Statement and Architecture
 
 A sophisticated multi-agent system, integrated with Slack, designed to answer questions about waste management and recycling regulations in NYC and other questions based on the users location. The system uses a supervisor-worker architecture powered by LangGraph and ReAct agents to delegate tasks and find accurate information.
 
-## ✨ Overview
+## Overview
 
 This project is a practical demonstration of a multi-agent AI. This system uses specialized agents, each with a distinct role, coordinated by a central supervisor. This allows for more complex, multi-step problem-solving.
 
@@ -28,7 +28,7 @@ The backend for all the tools (like web search and geolocation) is handled by a 
 
 -----
 
-## 🏗️ System Architecture
+##  System Architecture
 
 The system is composed of two main services that must be run simultaneously: the **MCP Server** (the tool provider) and the **Supervisor Agent** (the application logic and Slack interface).
 
@@ -69,7 +69,7 @@ graph TD
 
 -----
 
-## 🚀 Getting Started
+##  Getting Started
 
 Follow these steps to set up and run the project locally.
 
@@ -179,7 +179,7 @@ You should see output indicating the bot is connected and listening for events.
 
 -----
 
-## 🤖 How to Use
+##  How to Use
 
 1.  In your Slack workspace, invite the bot to a channel.
 2.  Mention the bot with your question. For example:
@@ -191,7 +191,7 @@ The supervisor will delegate the tasks, and you'll receive a comprehensive answe
 
 -----
 
-## ⚙️ Component Breakdown
+##  Component Breakdown
 
 ### `mcp_server.py` - The Tool Shed
 
@@ -212,7 +212,7 @@ This file contains the core logic for the multi-agent system and the Slack integ
 
 -----
 
-## 🗓️ Future Work
+##  Future Work
 
   * **Containerization**: The next major step is to containerize both the `mcp_server` and `supervisor-agent` services using **Docker**. A `docker-compose.yml` file will be created to allow users to launch the entire system with a single command (`docker-compose up`), eliminating the need for manual setup and running processes in separate terminals.
   * **Error Handling**: Improve resilience by adding more robust error handling for API calls and agent failures.
