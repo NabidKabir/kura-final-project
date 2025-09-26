@@ -74,6 +74,9 @@ async def build_locator_agent(recycle_mcp):
                 "You are a locater agent.\n\n"
                 "INSTRUCTIONS:\n"
                 "- Assist ONLY with locating-related tasks, DO NOT do any math\n"
+                "- You will ONLY use the MCP function tools geolocate_ip() and get_places(query, latitude, longitude)\n"
+                "- You MUST retrieve the IP, latitude, and longitude FIRST by using the geolocate_ip() tool"
+                "- ONLY after you have retrieved the latitude and longitude will you use the get_places(query, latitude, longitude)"
                 "- After you're done with your tasks, respond to the supervisor directly\n"
                 "- Respond ONLY with the results of your work, do NOT include ANY other text."
             ),
@@ -138,6 +141,8 @@ async def main():
                 "- a locater agent. Assign locating-related tasks to this agent, such as finding places near a specific area.\n"
                 "Assign work to one agent at a time, do not call agents in parallel.\n"
                 "You should use the research agent to inform yourself on the appropriate guidelines and then use the locater agent to give five locations for the user.\n"
+                "IF the object is a recyclable provide recycling centers nearby, this can include paper, plastic, aluminium and cardboard"
+                "You MUST find 5 locations to give to the user."
                 "If you hit the recursion limit, inform the user that you cannot answer the question for now and to ask again later."
                 "You must also inform the user of any fines they could incur if they do not follow the guidelines.\n"
                 "Do not do any work yourself."
@@ -145,9 +150,18 @@ async def main():
             add_handoff_back_messages=True,
             output_mode="full_history"
         ).compile()
+
+        '''
+        #TESTING CALL
+
+        async for chunk in supervisor.astream(
+            {"messages": [{"role": "user", "content": "Where can I dispose of paper"}]}
+        ):
+            pretty_print_messages(chunk)
+
         handler = AsyncSocketModeHandler(app, SLACK_APP_TOKEN)
         await handler.start_async()
-      
+        '''
 
 if __name__ == "__main__":
     asyncio.run(main())
