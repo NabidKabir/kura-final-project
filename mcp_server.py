@@ -157,4 +157,4 @@ async def get_places(query: str, latitude: float, longitude: float) -> dict:
         "results": locations
     }
 if __name__ == "__main__":
-    recycle_mcp.run(transport="http", host="localhost", port=8000)
+    recycle_mcp.run(transport="http", host="0.0.0.0", port=8000)

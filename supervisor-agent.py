@@ -139,7 +139,7 @@ async def handle_query(body, say):
 
 async def main():
     global supervisor
-    async with Client("http://localhost:8000/mcp") as recycle_mcp:
+    async with Client("http://mcp-server:8000/mcp") as recycle_mcp:
         locator_agent = await build_locator_agent(recycle_mcp)
         research_agent = await build_research_agent(recycle_mcp)
 

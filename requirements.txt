@@ -6,21 +6,37 @@ httpx
 #LLM Provider
 openai
 langchain-openai
+langgraph-supervisor
+langchain-core
 
 #MCP Server
 langchain-mcp-adapters
+
+#Vector Database
+langchain-community
+langchain-chroma
+chromadb
+langchain-text-splitters
+
+#Search/Web
+langchain-tavily
+
+#Slack Integration
+slack-bolt
 
 #Tools/APIs
 googlemaps
 
 #Web/API server
-fastapi
-uvicorn[standard]
+fastmcp
+
 
 #Utilities
-python-dotenv   
-requests       
-pydantic      
+python-dotenv
+requests
+pydantic
+dotenv
+asyncio
 
 #Testing
 pytest
