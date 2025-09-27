@@ -1,3 +1,5 @@
+[![Build and Push Docker Images](https://github.com/NabidKabir/kura-final-project/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/NabidKabir/kura-final-project/actions/workflows/docker-build-push.yml)
+
 # kura-final-project
 Project submission for final enterprise project as per Google's and Kura Labs' Agentic AI Learning Course
 
