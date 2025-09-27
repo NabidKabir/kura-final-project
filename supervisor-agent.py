@@ -104,7 +104,6 @@ async def build_research_agent(recycle_mcp):
             model="openai:gpt-4.1-mini",
             tools=tools,
             prompt=(
-                "You are a research agent.\n\n"
                 "INSTRUCTIONS:\n"
                 "You are a research agent.\n\n"
                 "INSTRUCTIONS:\n"
@@ -112,7 +111,7 @@ async def build_research_agent(recycle_mcp):
                 "- You will ONLY use the MCP function regulation_retrieval(query: str)"
                 "- Do NOT use any other tool."
                 "- First consult the waste disposal knowledge base when possible.\n"
-                "- If needed, you may use web search for additional context.\n"
+                "- If needed, then you may use web search for additional context.\n"
                 "- After you're done with your tasks, respond to the supervisor directly\n"
                 "- Respond ONLY with the results of your work, do NOT include ANY other text."
             ),
@@ -132,7 +131,7 @@ async def handle_query(body, say):
         return
 
     response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]}, {"configurable":{"recursion_limit": 15}})
-    print("invoke")
+    #print("invoke")
     
     text = response["messages"][-1].content
 

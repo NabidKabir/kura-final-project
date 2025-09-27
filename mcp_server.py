@@ -2,8 +2,6 @@ from fastmcp import FastMCP
 import os
 import requests
 from dotenv import load_dotenv
-from typing import List, Dict, Optional, Any
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -31,7 +29,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 chunks = text_splitter.split_documents(document)
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 vector_store = Chroma(
     collection_name="knowledge-base",
