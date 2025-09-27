@@ -1,0 +1,51 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main, docker-setup ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push MCP Server
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.mcp
+        push: true
+        tags: iddris/ai-waste-management-mcp-server:latest
+
+    - name: Build and push Supervisor Agent
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.supervisor
+        push: true
+        tags: iddris/ai-waste-management-supervisor-agent:latest
+
+    - name: Build and push Web Interface
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.web
+        push: true
+        tags: iddris/ai-waste-management-agent-web-interface:latest
+
+    - name: Update deployment status
+      run: echo "✅ All images built and pushed successfully!"

@@ -10,6 +10,16 @@ langchain-openai
 #MCP Server
 langchain-mcp-adapters
 
+#Vector Database
+langchain-chroma
+chromadb
+
+#Search/Web
+langchain-tavily
+
+#Slack Integration
+slack-bolt
+
 #Tools/APIs
 googlemaps
 
@@ -18,9 +28,9 @@ fastapi
 uvicorn[standard]
 
 #Utilities
-python-dotenv   
-requests       
-pydantic      
+python-dotenv
+requests
+pydantic
 
 #Testing
 pytest

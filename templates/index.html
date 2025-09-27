@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAINE Recycling Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            display: flex;
+            height: 600px;
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .chat-input {
+            flex: 0 0 400px;
+            padding: 20px;
+            background: white;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .message-content {
+            margin-bottom: 10px;
+        }
+
+        .response-data {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .quick-actions {
+            margin-top: 20px;
+        }
+
+        .quick-action {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.3s;
+        }
+
+        .quick-action:hover {
+            background: #e9ecef;
+        }
+
+        .location-item {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .knowledge-item {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .web-item {
+            background: #cce5ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .comprehensive-response {
+            background: #f0f8f0;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .comprehensive-response h3, .comprehensive-response h4 {
+            color: #2e7d32;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .comprehensive-response ul, .comprehensive-response ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DAINE Recycling Assistant</h1>
+            <p>Your intelligent guide to proper waste disposal and recycling</p>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-history">
+                <h3>Conversation</h3>
+                {% if conversation %}
+                    {% for msg in conversation %}
+                        <div class="message {{ msg.role }}">
+                            <div class="message-content">
+                                {% if msg.content.type == 'comprehensive' %}
+                                    <div class="comprehensive-response">
+                                        {{ msg.content.message|replace('\n', '<br>')|safe }}
+                                    </div>
+                                {% else %}
+                                    {{ msg.content.message if msg.content.message else msg.content }}
+                                {% endif %}
+                            </div>
+                            {% if msg.role == 'assistant' and msg.content.data %}
+                                <div class="response-data">
+                                    {% if msg.content.type == 'location' %}
+                                        {% if msg.content.data.results %}
+                                            {% for location in msg.content.data.results[:3] %}
+                                                <div class="location-item">
+                                                    <strong>{{ location.name }}</strong><br>
+                                                    {{ location.address }}<br>
+                                                    {{ location.phone_number }}
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="location-item">
+                                                {{ msg.content.data }}
+                                            </div>
+                                        {% endif %}
+                                    {% elif msg.content.type == 'knowledge' %}
+                                        {% if msg.content.data.results %}
+                                            {% for result in msg.content.data.results[:3] %}
+                                                <div class="knowledge-item">
+                                                    {{ result }}
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="knowledge-item">
+                                                {{ msg.content.data }}
+                                            </div>
+                                        {% endif %}
+                                    {% elif msg.content.type == 'web_search' %}
+                                        {% if msg.content.data.results %}
+                                            {% for result in msg.content.data.results[:3] %}
+                                                <div class="web-item">
+                                                    {{ result }}
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="web-item">
+                                                {{ msg.content.data }}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="message assistant">
+                        <div class="message-content">
+                            👋 Hi! I'm your recycling assistant. Ask me about:
+                            <ul style="margin-top: 10px;">
+                                <li>How to recycle specific items</li>
+                                <li>Finding recycling centers near you</li>
+                                <li>Local recycling regulations</li>
+                                <li>Avoiding disposal fines</li>
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="chat-input">
+                <h3>💭 Ask a Question</h3>
+                <form method="post" action="/chat">
+                    <div class="form-group">
+                        <label for="message">What would you like to know about recycling?</label>
+                        <textarea
+                            name="message"
+                            id="message"
+                            class="form-control"
+                            rows="4"
+                            placeholder="e.g., How do I recycle electronics in NYC?"
+                            required
+                        ></textarea>
+                    </div>
+                    <button type="submit" class="btn">Get Recycling Help</button>
+                </form>
+
+                <div class="quick-actions">
+                    <h4>Quick Actions</h4>
+                    <a href="#" class="quick-action" onclick="setQuery('Where can I recycle electronics near me?')">
+                        Find Electronics Recycling
+                    </a>
+                    <a href="#" class="quick-action" onclick="setQuery('What are the composting rules in my area?')">
+                        Composting Guidelines
+                    </a>
+                    <a href="#" class="quick-action" onclick="setQuery('How do I dispose of paint cans safely?')">
+                        Hazardous Waste Disposal
+                    </a>
+                    <a href="#" class="quick-action" onclick="setQuery('What fines can I get for improper recycling?')">
+                        Avoid Disposal Fines
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setQuery(query) {
+            document.getElementById('message').value = query;
+        }
+
+        // Auto-scroll to bottom of chat
+        const chatHistory = document.querySelector('.chat-history');
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    </script>
+</body>
+</html>

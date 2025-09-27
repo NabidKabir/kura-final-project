@@ -6,7 +6,6 @@ from fastmcp import Client
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import convert_to_messages
-from langgraph_supervisor import create_supervisor
 from langchain.chat_models import init_chat_model
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
@@ -117,20 +116,22 @@ async def handle_query(body, say):
 
     response = await supervisor.ainvoke({"messages": [{"role": "user", "content": message}]})
     print("invoke")
-    
+
     text = response["messages"][-1].content
 
     await say(text=text, thread_ts=thread_ts)
 
 async def main():
     global supervisor
-    async with Client("http://localhost:8000/mcp") as recycle_mcp:
+    async with Client("http://mcp-server:8000/mcp") as recycle_mcp:
         locator_agent = await build_locator_agent(recycle_mcp)
         research_agent = await build_research_agent(recycle_mcp)
 
-        supervisor = create_supervisor(
+        # Create a simple supervisor using react agent
+        # (We'd need proper supervisor graph implementation for full functionality)
+        supervisor = create_react_agent(
             model=init_chat_model("openai:gpt-4.1-mini"),
-            agents=[research_agent, locator_agent],
+            tools=await load_mcp_tools(recycle_mcp.session),  # Load MCP tools
             prompt=(
                 "You are a supervisor managing two agents:\n"
                 "- a research agent. Assign research-related tasks to this agent, such as more information on city guidelines.\n"
@@ -140,9 +141,13 @@ async def main():
                 "You must also inform the user of any fines they could incur if they do not follow the guidelines.\n"
                 "Do not do any work yourself."
             ),
-            add_handoff_back_messages=True,
-            output_mode="full_history"
-        ).compile()
+            name="supervisor"
+        )
+
+        print("✅ Supervisor agent started successfully!")
+        print("✅ MCP Server connected!")
+        print("✅ Ready to receive Slack messages")
+
         handler = AsyncSocketModeHandler(app, SLACK_APP_TOKEN)
         await handler.start_async()
       

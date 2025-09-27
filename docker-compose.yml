@@ -12,11 +12,10 @@ services:
 
   # MCP Server - provides tools for recycling information
   mcp-server:
-    build:
-      context: .
-      dockerfile: Dockerfile.mcp
+    image: iddris/ai-waste-management-mcp-server:latest
     ports:
       - "8000:8000"
+      - "8001:8001"
     environment:
       - TAVILY_API_KEY=${TAVILY_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
@@ -36,9 +35,7 @@ services:
 
   # Supervisor Agent with Slack integration
   supervisor:
-    build:
-      context: .
-      dockerfile: Dockerfile.supervisor
+    image: iddris/ai-waste-management-supervisor-agent:latest
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
@@ -46,6 +43,21 @@ services:
       - MCP_SERVER_URL=http://mcp-server:8000
     volumes:
       - ./supervisor-agent.py:/app/supervisor-agent.py
+    depends_on:
+      - mcp-server
+    restart: unless-stopped
+
+  # Web Interface - Frontend for browser access
+  web-interface:
+    image: iddris/ai-waste-management-agent-web-interface:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./web_interface.py:/app/web_interface.py
+      - ./templates:/app/templates
     depends_on:
       - mcp-server
     restart: unless-stopped
